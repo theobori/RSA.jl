@@ -1,2 +1,0 @@
-# RSA.jl
-🔐 Asymmetric cryptography
