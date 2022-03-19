@@ -2,6 +2,8 @@
 
 module RSA
 
+using Random
+
 """
 Returns x^n mod p
 """
@@ -54,8 +56,8 @@ end
 
 """
 Euler totient function of n
-phi(n) = number of positive integers co-prime with n.
 
+phi(n) = number of positive integers co-prime with n.
 n: Int
 """
 function phi(n::Integer)
@@ -75,6 +77,32 @@ function phi(n::Integer)
         result -= result / n
     end
     Int(result)
+end
+
+"""
+Returns a random Integer of size bit_size bits
+"""
+function get_random_int(bit_size::T) where T <: Integer
+    bit_vector = bitrand(bit_size)
+    sum([(2 ^ (i - 1)) * bit for (i, bit) in enumerate(reverse(bit_vector))])
+end  
+
+"""
+Estimate if the number is prime
+"""
+function check_composite(a::T, d::T, n::T, s::T) where T <: Integer
+    x = exp(a, d, n)
+
+    if (x == 1 || x == (n - 1))
+        return (false)
+    end
+    for _ in 1:s
+        x = (x * x) % n
+        if (x == (n - 1))
+            return (false)
+        end
+    end
+    true
 end
 
 """Miller Rabin primality test
@@ -97,6 +125,27 @@ function miller_rabin(n::T, k::T = 10) where T <: Integer
         d /= 2
     end
     @assert 2^s*d == n - 1
+    for _ in 1:k
+        a = rand(2:n - 1)
+        d = floor(Int, d)
+        if (check_composite(a, d, n, s))
+            return (false)
+        end
+    end
+    true
+end
+
+"""
+Generates a large a prime number by incremental search
+"""
+function generate_large_prime(bit_size::T, primality_test::Function = miller_rabin) where T <: Integer
+    p = get_random_int(bit_size)
+
+    if (p & 1 != 0)
+        p += 1
+    end
+
+    # To continue
 end
 
 end # module
