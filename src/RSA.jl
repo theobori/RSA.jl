@@ -7,7 +7,7 @@ using Random
 """
 Returns x^n mod p
 """
-function exp(x::T, n::T, p::T = 1000007) where T <: Integer
+function exp(x::T, n::T, p::T = 1000007) where {T <: Number}
     ans = 1
     x = x % p
 
@@ -24,10 +24,10 @@ end
 """
 Modular multiplicative inverse
 
-a: integer whose inverse is to be found
+a: Number whose inverse is to be found
 n: modular base
 """
-function inverse(a::T, n::T) where T <: Integer
+function inverse(a::T, n::T) where {T <: Number}
     g, x, _ = gcdx(a, n)
 
     if (g != 1)
@@ -41,7 +41,7 @@ Seive of Eratosthenes
 
 Returns primes less than n
 """
-function seive(n::T) where T <: Integer
+function seive(n::T) where {T <: Number}
     seive_list = ones(Bool, n)
 
     for i in 2:trunc(T, sqrt(n))
@@ -57,10 +57,10 @@ end
 """
 Euler totient function of n
 
-phi(n) = number of positive integers co-prime with n.
+phi(n) = number of positive Numbers co-prime with n.
 n: Int
 """
-function phi(n::Integer)
+function phi(n::Number)
     result = n
     p = 2
 
@@ -73,6 +73,7 @@ function phi(n::Integer)
         end
         p += 1
     end
+
     if (n > 1)
         result -= result / n
     end
@@ -80,9 +81,9 @@ function phi(n::Integer)
 end
 
 """
-Returns a random Integer of size bit_size bits
+Returns a random Number of size bit_size bits
 """
-function get_random_int(bit_size::T) where T <: Integer
+function get_random_int(bit_size::T) where {T <: Number}
     bit_vector = bitrand(bit_size)
     sum([(2 ^ (i - 1)) * bit for (i, bit) in enumerate(reverse(bit_vector))])
 end  
@@ -91,7 +92,7 @@ end
 Returns the Jacobi symbol
 If b is prime, it returns the Legendre Symbol
 """
-function jacobi(a::T, b::T) where T <: Integer
+function jacobi(a::T, b::T) where {T <: Number}
     if (b <= 0)
         error("b must be >= 1")
     end
@@ -130,12 +131,13 @@ end
 """
 Estimate if the number is prime
 """
-function check_composite(a::T, d::T, n::T, s::T) where T <: Integer
+function check_composite(a::T, d::T, n::T, s::T) where {T <: Number}
     x = exp(a, d, n)
 
     if (x == 1 || x == (n - 1))
         return (false)
     end
+
     for _ in 1:s
         x = (x * x) % n
         if (x == (n - 1))
@@ -148,23 +150,27 @@ end
 """Miller Rabin primality test
 Return False if n is composite, True(probably prime) otherwise.
 
-n: integer to be tested for primality
+n: Number to be tested for primality
 k: number of iterations to run the test
 """
-function miller_rabin(n::T, k::T = 10) where T <: Integer
+function miller_rabin(n::T, k::T = 10) where {T <: Number}
     if (n == 2)
         return (true)
     end
     if (n == 1 || n % 2 == 0)
         return (false)
     end 
+
     s = 0
     d = n - 1
+
     while d % 2 == 0
         s += 1
         d /= 2
     end
+
     @assert 2 ^ s * d == n - 1
+
     for _ in 1:k
         a = rand(2:n - 1)
         d = floor(Int, d)
@@ -176,16 +182,67 @@ function miller_rabin(n::T, k::T = 10) where T <: Integer
 end
 
 """
-Generates a large a prime number by incremental search
-"""
-function generate_large_prime(bit_size::T, primality_test::Function = miller_rabin) where T <: Integer
-    p = get_random_int(bit_size)
+Solovay Strassen Primality Test
+Returns False is n is composite, True(probably prime) otherwise
 
-    if (p & 1 != 0)
-        p += 1
+n: Number to be tested for primality
+k: number of iterations to run the test
+"""
+function solovay_strassen(n::T, k::T = 10) where {T <: Number}
+    if (n == 2)
+        return (true)
+    end
+    if (n == 1 || n & 1 == 0)
+        return (false)
     end
 
-    # To continue
+    for _ in 1:k
+        a = rand(2:n-1)
+        x = (jacobi(a, n) + n) % n
+        if (x == 0 || exp(a, floor(Int, (n - 1) / 2), n) != x)
+            return (false)
+        end
+    end
+    true
+end
+
+"""
+Fermat's Primality test
+Returns True(probably prime) if n is prime, Flase if n is composite
+
+n: Number to be tested for primality
+k: number of iterations of the Fermat's Primality Test
+"""
+function fermat_test(n::T, k::T = 10) where {T <: Number}
+    if (n == 2)
+        return (true)
+    end
+    if (n & 1 == 0)
+        return (false)
+    end
+
+    for _ in 1:k
+        a = rand(2:n-1)
+        if (exp(a, n - 1, n) != 1)
+            return (false)
+        end
+    end
+    true
+end
+
+"""
+Generates a large a prime number by incremental search
+"""
+function generate_large_prime(bit_size::T, primality_test::Function = fermat_test) where {T <: Number}
+    p = get_random_int(bit_size)
+
+    if (p & 1 != 1)
+        p += 1
+    end
+    while primality_test(p) == false
+        p += 2
+    end
+    p
 end
 
 end # module

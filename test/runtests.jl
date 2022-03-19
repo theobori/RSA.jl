@@ -34,4 +34,12 @@ end
     @test RSA.miller_rabin(561) == false
     @test RSA.miller_rabin(29) == true
     @test RSA.miller_rabin(221) == false
+
+    @test RSA.solovay_strassen(561) == false
+    @test RSA.solovay_strassen(29) == true
+    @test RSA.solovay_strassen(221) == false
+
+    @test RSA.fermat_test(5) == true
+    @test RSA.fermat_test(4) == false
+    @test RSA.fermat_test(341) == false
 end
