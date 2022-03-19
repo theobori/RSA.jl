@@ -20,6 +20,13 @@ include("../src/RSA.jl")
 
     @test RSA.get_random_int(3) <= 7
     @test RSA.get_random_int(8) <= 255
+
+    @test RSA.jacobi(1001, 9907) == -1
+    @test RSA.jacobi(19, 45) == 1
+    @test RSA.jacobi(8,21) == -1
+    @test RSA.jacobi(3, 15) == 0
+    @test_throws ErrorException RSA.jacobi(13, 28)
+    @test RSA.jacobi(28, 13) == -1
 end
 
 @testset "Primality functions" begin

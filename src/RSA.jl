@@ -88,6 +88,46 @@ function get_random_int(bit_size::T) where T <: Integer
 end  
 
 """
+Returns the Jacobi symbol
+If b is prime, it returns the Legendre Symbol
+"""
+function jacobi(a::T, b::T) where T <: Integer
+    if (b <= 0)
+        error("b must be >= 1")
+    end
+    if (b & 1 == 0)
+        error("b must be odd")
+    end
+
+    ans = 1
+    if (a < 0)
+        a = -a
+        if (b % 4 == 3)
+            ans = -ans
+        end
+    end
+
+    while a != 0
+        while a % 2 == 0
+            a /= 2
+            if ((b % 8) in [3, 5])
+                ans = -ans
+            end
+        end
+        a, b = b, a
+        if a % 4 == 3 && b % 4 == 3
+            ans = -ans
+        end
+        a = a % b
+    end
+
+    if (b == 1)
+        return (ans)
+    end
+    0
+end
+
+"""
 Estimate if the number is prime
 """
 function check_composite(a::T, d::T, n::T, s::T) where T <: Integer
@@ -124,7 +164,7 @@ function miller_rabin(n::T, k::T = 10) where T <: Integer
         s += 1
         d /= 2
     end
-    @assert 2^s*d == n - 1
+    @assert 2 ^ s * d == n - 1
     for _ in 1:k
         a = rand(2:n - 1)
         d = floor(Int, d)
