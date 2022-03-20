@@ -17,6 +17,9 @@ function check_composite(a::BigInt, d::BigInt, n::BigInt, s::BigInt)
     true
 end
 
+check_composite(a::T, d::T, n::T, s::T) where {T <: Integer} =
+check_composite(big(a), big(d), big(n), big(s))
+
 """Miller Rabin primality test
 Return False if n is composite, True(probably prime) otherwise.
 
@@ -51,6 +54,9 @@ function miller_rabin(n::BigInt, k::BigInt = big(10))
     true
 end
 
+miller_rabin(n::T, k::T = 10) where {T <: Integer} = 
+miller_rabin(big(n), big(k))
+
 """
 Solovay Strassen Primality Test
 Returns False is n is composite, True(probably prime) otherwise
@@ -76,6 +82,9 @@ function solovay_strassen(n::BigInt, k::BigInt = big(10))
     true
 end
 
+solovay_strassen(n::T, k::T = 10) where {T <: Integer} = 
+solovay_strassen(big(n), big(k))
+
 """
 Fermat's Primality test
 Returns True(probably prime) if n is prime, Flase if n is composite
@@ -99,3 +108,6 @@ function fermat_test(n::BigInt, k::BigInt = big(10))
     end
     true
 end
+
+fermat_test(n::T, k::T = 10) where {T <: Integer} = 
+fermat_test(big(n), big(k))

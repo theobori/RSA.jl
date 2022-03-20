@@ -15,6 +15,9 @@ function exp!(x::BigInt, n::BigInt, p::BigInt = big(1000007))
     ans
 end
 
+exp!(x::T, n::T, p::T = 1000007) where {T <: Integer} =
+exp!(big(x), big(n), big(p))
+
 """
 Modular multiplicative inverse
 
@@ -29,6 +32,9 @@ function inverse(a::BigInt, n::BigInt)
     end
     (x % n + n) % n
 end
+
+inverse(a::T, n::T) where {T <: Integer} =
+inverse(big(a), big(n))
 
 """
 Seive of Eratosthenes
@@ -47,6 +53,9 @@ function seive(n::BigInt)
    end
     filter(x -> seive_list[x] == true, 2:n)
 end
+
+seive(n::T) where {T <: Integer} =
+seive(big(n))
 
 """
 Euler totient function of n
@@ -77,7 +86,7 @@ end
 """
 Returns a random Number of size bit_size bits
 """
-function get_random_int(bit_size::BigInt) 
+function get_random_int(bit_size::T) where {T <: Integer} 
     bit_vector = bitrand(bit_size)
     sum([(2 ^ BigInt((i - 1))) * bit for (i, bit) in enumerate(reverse(bit_vector))])
 end  
@@ -121,6 +130,9 @@ function jacobi!(a::BigInt, b::BigInt)
     end
     0
 end
+
+jacobi!(a::T, b::T) where {T <: Integer} =
+jacobi!(big(a), big(b))
 
 """
 Generates a large a prime number by incremental search
