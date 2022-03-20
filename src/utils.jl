@@ -1,7 +1,7 @@
 """
 Returns x^n mod p
 """
-function exp!(x::T, n::T, p::T = 1000007) where {T <: Integer}
+function exp!(x::BigInt, n::BigInt, p::BigInt = big(1000007)) 
     ans = 1
     x = x % p
 
@@ -21,7 +21,7 @@ Modular multiplicative inverse
 a: Number whose inverse is to be found
 n: modular base
 """
-function inverse(a::T, n::T) where {T <: Integer}
+function inverse(a::BigInt, n::BigInt) 
     g, x, _ = gcdx(a, n)
 
     if (g != 1)
@@ -35,10 +35,10 @@ Seive of Eratosthenes
 
 Returns primes less than n
 """
-function seive(n::T) where {T <: Integer}
+function seive(n::BigInt) 
     seive_list = ones(Bool, n)
 
-    for i in 2:trunc(T, sqrt(n))
+    for i in 2:trunc(BigInt, sqrt(n))
         if seive_list[i] == true
            for j in (i*i):i:n
                 seive_list[j] = false
@@ -77,16 +77,16 @@ end
 """
 Returns a random Number of size bit_size bits
 """
-function get_random_int(bit_size::T) where {T <: Integer}
+function get_random_int(bit_size::BigInt) 
     bit_vector = bitrand(bit_size)
-    sum([(2 ^ (i - 1)) * bit for (i, bit) in enumerate(reverse(bit_vector))])
+    sum([(2 ^ BigInt((i - 1))) * bit for (i, bit) in enumerate(reverse(bit_vector))])
 end  
 
 """
 Returns the Jacobi symbol
 If b is prime, it returns the Legendre Symbol
 """
-function jacobi!(a::T, b::T) where {T <: Integer}
+function jacobi!(a::BigInt, b::BigInt) 
     if (b <= 0)
         error("b must be >= 1")
     end
@@ -125,7 +125,7 @@ end
 """
 Generates a large a prime number by incremental search
 """
-function generate_large_prime(bit_size::T, primality_test::Function = fermat_test) where {T <: Integer}
+function generate_large_prime(bit_size::BigInt, primality_test::Function = miller_rabin) 
     p = get_random_int(bit_size)
 
     if (p & 1 != 1)
@@ -140,4 +140,4 @@ end
 """
 Easier to convert Int to bytes
 """
-to_bytes(x) = reinterpret(UInt8, [x])
+to_bytes(x) = reinterpret(UInt8, x)
