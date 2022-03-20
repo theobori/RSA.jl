@@ -1,248 +1,93 @@
-#!/usr/bin/env julia
-
 module RSA
 
 using Random
 
-"""
-Returns x^n mod p
-"""
-function exp(x::T, n::T, p::T = 1000007) where {T <: Number}
-    ans = 1
-    x = x % p
+include("utils.jl")
+include("primality.jl")
 
-    while n > 0
-        if ((n & 1) != 0)
-            ans = (ans * x) % p
-        end
-        x = (x * x) % p
-        n = n >> 1
+"""
+RSA Crypto System
+"""
+struct System{T <: Integer}
+    bit_size::T
+    primality_test::Function
+    p::T
+    q::T
+    n::T
+    phi::T
+    public_key::T
+    private_key::T
+end
+
+function System(bit_size::Integer = 128, primality_test::Function = miller_rabin)
+    p = generate_large_prime(bit_size, primality_test)
+    q = generate_large_prime(bit_size, primality_test)
+
+    while p == q
+        q = generate_large_prime(bit_size, primality_test)
     end
-    ans
+    n = p * q
+    phi = (p - 1) * (q - 1)
+    public_key, private_key = generate_keys()
+    System(bit_size, primality_tes, p, q, n, phi, public_key, private_key)
 end
 
 """
-Modular multiplicative inverse
-
-a: Number whose inverse is to be found
-n: modular base
+Generates public and private keys
 """
-function inverse(a::T, n::T) where {T <: Number}
-    g, x, _ = gcdx(a, n)
+function generate_keys(n::T, phi::T) where {T <: Integer}
+    e = rand(2:phi-1)
 
-    if (g != 1)
-        error("The inverse doesn't exist")
+    while gcd(e, phi) != 1
+        e = rand(2:phi-1)
     end
-    (x % n + n) % n
+
+    d = inverse(e, phi)
+    public_key = (e, n)
+    private_key = (d, n)
+    public_key, private_key
 end
 
 """
-Seive of Eratosthenes
-
-Returns primes less than n
+Converts String to Integer
 """
-function seive(n::T) where {T <: Number}
-    seive_list = ones(Bool, n)
+function process_string!(message::String)
+    acc::BigInt = 0
+    padding = 0
+    len = length(message)
 
-    for i in 2:trunc(T, sqrt(n))
-        if seive_list[i] == true
-           for j in (i*i):i:n
-                seive_list[j] = false
-           end
-        end 
-   end
-    filter(x -> seive_list[x] == true, 2:n)
+    if (len % 4 != 0)
+        padding = (4 - (len % 4))
+        message = repeat("\x00", padding) * message
+    end
+
+    for i in 1:4:len
+        message_part = Vector{UInt8}(message[i:i + 3])
+        message_part = reinterpret(UInt32, message_part)[1]
+        acc = (acc << 32) + message_part
+    end
+    acc
 end
 
 """
-Euler totient function of n
-
-phi(n) = number of positive Numbers co-prime with n.
-n: Int
+Convert Integer to String
 """
-function phi(n::Number)
-    result = n
-    p = 2
+function recover_string!(number::Integer)
+    s = ""
+    i = 1
+    len = 0
 
-    while p * p <= n
-        if (n % p == 0)
-            while n % p == 0
-                n /= p
-            end
-            result -= result / p
-        end
-        p += 1
+    while number > 0
+        s = String(to_bytes(UInt32(number & 0xffffffff))) * s
+        number = number >> 32
     end
-
-    if (n > 1)
-        result -= result / n
+    if (s == "")
+        return (s)
     end
-    Int(result)
-end
-
-"""
-Returns a random Number of size bit_size bits
-"""
-function get_random_int(bit_size::T) where {T <: Number}
-    bit_vector = bitrand(bit_size)
-    sum([(2 ^ (i - 1)) * bit for (i, bit) in enumerate(reverse(bit_vector))])
-end  
-
-"""
-Returns the Jacobi symbol
-If b is prime, it returns the Legendre Symbol
-"""
-function jacobi(a::T, b::T) where {T <: Number}
-    if (b <= 0)
-        error("b must be >= 1")
+    while UInt8(s[i]) == 0
+        i += 1
     end
-    if (b & 1 == 0)
-        error("b must be odd")
-    end
-
-    ans = 1
-    if (a < 0)
-        a = -a
-        if (b % 4 == 3)
-            ans = -ans
-        end
-    end
-
-    while a != 0
-        while a % 2 == 0
-            a /= 2
-            if ((b % 8) in [3, 5])
-                ans = -ans
-            end
-        end
-        a, b = b, a
-        if a % 4 == 3 && b % 4 == 3
-            ans = -ans
-        end
-        a = a % b
-    end
-
-    if (b == 1)
-        return (ans)
-    end
-    0
-end
-
-"""
-Estimate if the number is prime
-"""
-function check_composite(a::T, d::T, n::T, s::T) where {T <: Number}
-    x = exp(a, d, n)
-
-    if (x == 1 || x == (n - 1))
-        return (false)
-    end
-
-    for _ in 1:s
-        x = (x * x) % n
-        if (x == (n - 1))
-            return (false)
-        end
-    end
-    true
-end
-
-"""Miller Rabin primality test
-Return False if n is composite, True(probably prime) otherwise.
-
-n: Number to be tested for primality
-k: number of iterations to run the test
-"""
-function miller_rabin(n::T, k::T = 10) where {T <: Number}
-    if (n == 2)
-        return (true)
-    end
-    if (n == 1 || n % 2 == 0)
-        return (false)
-    end 
-
-    s = 0
-    d = n - 1
-
-    while d % 2 == 0
-        s += 1
-        d /= 2
-    end
-
-    @assert 2 ^ s * d == n - 1
-
-    for _ in 1:k
-        a = rand(2:n - 1)
-        d = floor(Int, d)
-        if (check_composite(a, d, n, s))
-            return (false)
-        end
-    end
-    true
-end
-
-"""
-Solovay Strassen Primality Test
-Returns False is n is composite, True(probably prime) otherwise
-
-n: Number to be tested for primality
-k: number of iterations to run the test
-"""
-function solovay_strassen(n::T, k::T = 10) where {T <: Number}
-    if (n == 2)
-        return (true)
-    end
-    if (n == 1 || n & 1 == 0)
-        return (false)
-    end
-
-    for _ in 1:k
-        a = rand(2:n-1)
-        x = (jacobi(a, n) + n) % n
-        if (x == 0 || exp(a, floor(Int, (n - 1) / 2), n) != x)
-            return (false)
-        end
-    end
-    true
-end
-
-"""
-Fermat's Primality test
-Returns True(probably prime) if n is prime, Flase if n is composite
-
-n: Number to be tested for primality
-k: number of iterations of the Fermat's Primality Test
-"""
-function fermat_test(n::T, k::T = 10) where {T <: Number}
-    if (n == 2)
-        return (true)
-    end
-    if (n & 1 == 0)
-        return (false)
-    end
-
-    for _ in 1:k
-        a = rand(2:n-1)
-        if (exp(a, n - 1, n) != 1)
-            return (false)
-        end
-    end
-    true
-end
-
-"""
-Generates a large a prime number by incremental search
-"""
-function generate_large_prime(bit_size::T, primality_test::Function = fermat_test) where {T <: Number}
-    p = get_random_int(bit_size)
-
-    if (p & 1 != 1)
-        p += 1
-    end
-    while primality_test(p) == false
-        p += 2
-    end
-    p
+    s[i:length(s)]
 end
 
 end # module
