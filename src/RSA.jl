@@ -14,8 +14,8 @@ end
 """
 RSA Crypto RSASystem
 """
-struct RSASystem
-    bit_size::BigInt
+struct RSASystem{T <: Integer}
+    bit_size::T
     primality_test::Function
     p::BigInt
     q::BigInt
@@ -25,7 +25,7 @@ struct RSASystem
     private_key::Tuple{BigInt, BigInt}
 end
 
-function RSASystem(bit_size::BigInt = big(256), primality_test::Function = miller_rabin)
+function RSASystem(bit_size::T = 256, primality_test::Function = miller_rabin) where {T <: Integer}
     p = generate_large_prime(bit_size, primality_test)
     q = generate_large_prime(bit_size, primality_test)
     

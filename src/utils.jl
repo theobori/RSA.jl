@@ -86,7 +86,7 @@ end
 """
 Returns a random Number of size bit_size bits
 """
-function get_random_int(bit_size::T) where {T <: Integer} 
+function get_random_int(bit_size::T) where {T <: Integer}
     bit_vector = bitrand(bit_size)
     sum([(2 ^ BigInt((i - 1))) * bit for (i, bit) in enumerate(reverse(bit_vector))])
 end  
@@ -95,7 +95,7 @@ end
 Returns the Jacobi symbol
 If b is prime, it returns the Legendre Symbol
 """
-function jacobi!(a::BigInt, b::BigInt) 
+function jacobi!(a::BigInt, b::BigInt)
     if (b <= 0)
         error("b must be >= 1")
     end
@@ -137,7 +137,7 @@ jacobi!(big(a), big(b))
 """
 Generates a large a prime number by incremental search
 """
-function generate_large_prime(bit_size::BigInt, primality_test::Function = miller_rabin) 
+function generate_large_prime(bit_size::T, primality_test::Function = miller_rabin) where {T <: Integer}
     p = get_random_int(bit_size)
 
     if (p & 1 != 1)
